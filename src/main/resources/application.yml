@@ -1,0 +1,16 @@
+
+spring:
+  data:
+    mongodb:
+      database: cms_db
+      host: localhost
+      port: 27017
+
+
+server.port: 8080
+
+
+minio:
+  url: http://localhost:9000
+  access-key: miniorupesh
+  secret-key: miniorupesh
