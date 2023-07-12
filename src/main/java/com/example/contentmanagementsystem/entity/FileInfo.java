@@ -4,6 +4,8 @@ package com.example.contentmanagementsystem.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.javers.core.metamodel.annotation.DiffIgnore;
+
 
 @Data
 @AllArgsConstructor
@@ -14,10 +16,10 @@ public class FileInfo {
 
     private String path;
 
-    private String size;
+    private int size;
 
     private String content_type;
-
+    @DiffIgnore
     private UserHistory userHistory;
 
 }

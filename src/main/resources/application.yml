@@ -1,16 +1,31 @@
-
+server.port: 8080
 spring:
+  minio:
+    url: http://localhost:9000
+    bucket: storage
+    access-key: miniorupesh
+    secret-key: minorupesh
+
+
   data:
     mongodb:
-      database: cms_db
-      host: localhost
-      port: 27017
+     database: content_db
+     port: 27017
 
 
-server.port: 8080
 
 
-minio:
-  url: http://localhost:9000
-  access-key: miniorupesh
-  secret-key: miniorupesh
+javers:
+  documentDbCompatibilityEnabled: false
+  objectAccessHook: org.javers.spring.mongodb.DBRefUnproxyObjectAccessHook
+  snapshotsCacheSize: 5000
+  snapshotCollectionName: "Audit_table"
+  headCollectionName: "Audit_id"
+  schemaManagementEnabled: true
+
+
+
+
+
+
+

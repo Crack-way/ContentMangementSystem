@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 public class FileContentDto {
 
     private String id;
+    private String fileName;
     private String actual_data;
     private FileInfo fileInfo;
 }
