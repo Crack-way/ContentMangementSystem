@@ -17,5 +17,6 @@ public class FileContent {
     private String id;
     private String fileName;
     private String actual_data;
+    @DiffIgnore
     private FileInfo fileInfo;
 }

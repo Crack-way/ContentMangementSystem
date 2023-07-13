@@ -9,8 +9,10 @@ spring:
 
   data:
     mongodb:
-     database: content_db
-     port: 27017
+      uri: mongodb://adminUser:adminPassword@localhost/content_db?authSource=admin
+      database: content_db
+      auto-index-creation: false
+
 
 
 

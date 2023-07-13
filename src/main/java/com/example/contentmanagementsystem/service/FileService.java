@@ -6,7 +6,9 @@ import org.springframework.http.codec.multipart.FilePart;
 
 import reactor.core.publisher.Mono;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public interface FileService {
 
@@ -16,14 +18,14 @@ public interface FileService {
 
     public FileContentDto rollbackToSnapshot(String entityId, int snapshotVersion);
 
-    Mono<String> getFileContentChanges(String id);
+    Mono<List<FileContentDto>> getFileContentChanges(String id);
 
-    Mono<String> getFileContentChanges();
+    Mono<List<FileContentDto>> getFileContentChanges();
 
-    Mono<String> getFileContentStates();
+    Mono<String> getFileContentAuditStates();
 
-    Mono<String> getFileContentStates(String login);
+    Mono<String> getFileContentAuditStates(String id);
 
-    Mono<String> getFileContentStates(String fileContent1, String fileContent2);
+//    Mono<String> getFileContentStates(String fileContent1, String fileContent2);
 
 }

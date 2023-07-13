@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,25 +28,25 @@ public class FileController {
     @PostMapping("/update/{id}")
     public ResponseEntity<FileContentDto> updateFileContent(FilePart file, @PathVariable String id) throws IOException {
 
-        return  ResponseEntity.ok().body(fileService.updateFileContents(file,id));
+        return ResponseEntity.ok().body(fileService.updateFileContents(file, id));
     }
 
 
     @GetMapping("/roll")
-    public FileContentDto rollbackToSnapshot(@RequestParam("entityId") String entityId, @RequestParam("snapshotVersion") int snapshotVersion){
+    public FileContentDto rollbackToSnapshot(@RequestParam("entityId") String entityId, @RequestParam("snapshotVersion") int snapshotVersion) {
 
-        return fileService.rollbackToSnapshot(entityId,snapshotVersion);
+        return fileService.rollbackToSnapshot(entityId, snapshotVersion);
 
     }
 
     @GetMapping("/file")
-    public Mono<String> getFileContentChanges() {
+    public Mono<List<FileContentDto>> getFileContentChanges() {
 
         return fileService.getFileContentChanges();
     }
 
     @GetMapping("/file/{id}")
-    public Mono<String> getFileContentChanges(@PathVariable String id) {
+    public Mono<List<FileContentDto>> getFileContentChanges(@PathVariable String id) {
 
         return fileService.getFileContentChanges(id);
     }
@@ -52,20 +54,15 @@ public class FileController {
     @GetMapping("/fileContent/states")
     public Mono<String> getFileContentStates() {
 
-        return fileService.getFileContentStates();
+        return fileService.getFileContentAuditStates();
     }
 
     @GetMapping("/fileContent/{id}/states")
     public Mono<String> getFileContentStates(@PathVariable String id) {
 
-        return fileService.getFileContentStates(id);
+        return fileService.getFileContentAuditStates(id);
     }
 
-    @GetMapping("/fileContent/{id}/{id1}")
-    public Mono<String> getFileContentStates(@PathVariable String id, @PathVariable String id1) {
-
-        return fileService.getFileContentStates(id, id1);
-    }
 
 
 }

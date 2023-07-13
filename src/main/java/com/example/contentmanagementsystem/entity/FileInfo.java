@@ -19,7 +19,6 @@ public class FileInfo {
     private int size;
 
     private String content_type;
-    @DiffIgnore
-    private UserHistory userHistory;
+
 
 }

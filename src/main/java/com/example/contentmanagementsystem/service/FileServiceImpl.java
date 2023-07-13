@@ -3,12 +3,12 @@ package com.example.contentmanagementsystem.service;
 import com.example.contentmanagementsystem.dto.FileContentDto;
 import com.example.contentmanagementsystem.entity.FileContent;
 import com.example.contentmanagementsystem.entity.FileInfo;
-import com.example.contentmanagementsystem.entity.UserHistory;
 import com.example.contentmanagementsystem.repo.FileAuditRepo;
 import com.example.contentmanagementsystem.repo.FileContentRepo;
 import com.example.contentmanagementsystem.utils.AppUtils;
 import com.example.contentmanagementsystem.utils.file.GetMime;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.javers.core.Changes;
@@ -22,10 +22,13 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -61,29 +64,26 @@ public class FileServiceImpl implements FileService {
         fileInfo.setContent_type(String.valueOf(filePart.headers().getContentType()));
         fileInfo.setSize(filePart.headers().size());
         fileInfo.setPath("test/this/is/test");
-        fileInfo.setUserHistory(new UserHistory());
         return fileInfo;
     }
 
     @Override
     public FileContentDto updateFileContents(FilePart filePart, String id) throws IOException {
 
-        FileContent fileContent= getFileContent(filePart);
+        FileContent fileContent = getFileContent(filePart);
         fileContent.setId(id);
         return AppUtils.entityToDto(fileAuditRepo.save(fileContent));
     }
 
-    public  FileContentDto rollbackToSnapshot(String entityId, int snapshotVersion) {
+    public FileContentDto rollbackToSnapshot(String entityId, int snapshotVersion) {
         QueryBuilder jqlQuery = QueryBuilder.byInstanceId(entityId, FileContent.class).withVersion(snapshotVersion);
-        AtomicReference<FileContent> fileContent= new AtomicReference<>(new FileContent());
+        AtomicReference<FileContent> fileContent = new AtomicReference<>(new FileContent());
 
         javers.findSnapshots(jqlQuery.build()).forEach(snapshot -> {
             CdoSnapshotState cdoSnapshotState = snapshot.getState();
             String json = javers.getJsonConverter().toJson(cdoSnapshotState);
 
-            // Convert JSON to object using Gson or any other JSON library
-            Gson gson = new Gson();
-            fileContent.set(gson.fromJson(json, FileContent.class));
+            fileContent.set(javers.getJsonConverter().fromJson(json, FileContent.class));
 
         });
 
@@ -91,25 +91,47 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Mono<String> getFileContentChanges(String id) {
+    public Mono<List<FileContentDto>> getFileContentChanges(String id) {
+
 
         QueryBuilder jqlQuery = QueryBuilder.byInstanceId(id, FileContent.class);
+        List<CdoSnapshot> snapshots = javers.findSnapshots(jqlQuery.build());
 
-        Changes changes = javers.findChanges(jqlQuery.build());
-        String formattedChanges = "<pre>" + changes.prettyPrint() + "</pre>";
-        return Mono.just(formattedChanges);
+        List<CdoSnapshotState> snapshotStates = snapshots.stream()
+                .map(CdoSnapshot::getState)
+                .collect(Collectors.toList());
+        String changesJson = javers.getJsonConverter().toJson(snapshotStates);
+        Gson gson = new Gson();
+
+        AtomicReference<ArrayList<FileContentDto>> fileContentDtoList = new AtomicReference<>(new ArrayList<FileContentDto>());
+        fileContentDtoList.set(gson.fromJson(changesJson, new TypeToken<ArrayList<FileContentDto>>() {
+        }.getType()));
+
+        return Mono.just(fileContentDtoList.get());
+
     }
 
+
     @Override
-    public Mono<String> getFileContentChanges() {
+    public Mono<List<FileContentDto>> getFileContentChanges() {
         QueryBuilder jqlQuery = QueryBuilder.byClass(FileContent.class);
-        Changes changes = javers.findChanges(jqlQuery.build());
-        String formattedChanges = "<pre>" + changes.prettyPrint() + "</pre>";
-        return Mono.just(formattedChanges);
+        List<CdoSnapshot> snapshots = javers.findSnapshots(jqlQuery.build());
+
+        List<CdoSnapshotState> snapshotStates = snapshots.stream()
+                .map(CdoSnapshot::getState)
+                .collect(Collectors.toList());
+        String changesJson = javers.getJsonConverter().toJson(snapshotStates);
+        Gson gson = new Gson();
+
+        AtomicReference<ArrayList<FileContentDto>> fileContentDtoList = new AtomicReference<>(new ArrayList<FileContentDto>());
+        fileContentDtoList.set(gson.fromJson(changesJson, new TypeToken<ArrayList<FileContentDto>>() {
+        }.getType()));
+
+        return Mono.just(fileContentDtoList.get());
     }
 
     @Override
-    public Mono<String> getFileContentStates() {
+    public Mono<String> getFileContentAuditStates() {
         QueryBuilder jqlQuery = QueryBuilder.byClass(FileContent.class);
 
         List<CdoSnapshot> changes = new ArrayList<>(javers.findSnapshots(jqlQuery.build()));
@@ -122,9 +144,9 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Mono<String> getFileContentStates(String login) {
+    public Mono<String> getFileContentAuditStates(String id) {
 
-        QueryBuilder jqlQuery = QueryBuilder.byInstanceId(login, FileContent.class);
+        QueryBuilder jqlQuery = QueryBuilder.byInstanceId(id, FileContent.class);
 
         List<CdoSnapshot> changes = javers.findSnapshots(jqlQuery.build());
 
@@ -136,18 +158,16 @@ public class FileServiceImpl implements FileService {
 
     }
 
-
-    public Mono<String> getFileContentStates(String id, String id1) {
-        FileContent fileContent1 = fileContentsRepo.findById(id).block();
-        FileContent fileContent2 = fileContentsRepo.findById(id1).block();
-
-
-        Diff diff = javers.compare(fileContent1, fileContent2);
-
-        JsonConverter jsonConverter = javers.getJsonConverter();
-
-        return Mono.just(jsonConverter.toJson(diff.getChanges()));
-    }
+//
+//    public Mono<String> getFileContentStates(String id, String id1) {
+//
+//
+//        Diff diff = javers.compare(id, id1);
+//
+//        JsonConverter jsonConverter = javers.getJsonConverter();
+//
+//        return Mono.just(jsonConverter.toJson(diff.getChanges()));
+//    }
 
 
 }
